@@ -1,0 +1,20 @@
+{
+  "bool": true,
+  "testNode": {
+    "array": [
+      "hi",
+      "h2",
+      "h3"
+    ],
+    "int": 256
+  },
+  "double": 230394.4329,
+  "name": "hi",
+  "lol": {"this": {"is": {"a": {
+    "meow": "~nya",
+    "tree": {
+      "bool": true,
+      "int": 2
+    }
+  }}}}
+}
