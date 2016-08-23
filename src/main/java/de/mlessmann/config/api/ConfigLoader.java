@@ -1,9 +1,8 @@
-package de.mlessmann.config.reflect;
+package de.mlessmann.config.api;
 
 import de.mlessmann.config.ConfigNode;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by Life4YourGames on 18.08.16.

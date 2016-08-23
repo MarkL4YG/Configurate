@@ -1,7 +1,7 @@
 package de.mlessmann.config;
 
+import de.mlessmann.config.api.ConfigLoader;
 import de.mlessmann.config.except.RootMustStayHubException;
-import de.mlessmann.config.reflect.ConfigLoader;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
