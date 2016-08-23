@@ -1,7 +1,6 @@
 package de.mlessmann.config;
 
 import de.mlessmann.config.except.RootMustStayHubException;
-import org.json.JSONObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -63,7 +62,10 @@ public class ConfigNode {
         if (!(value instanceof Map))
             value = new HashMap<String, ConfigNode>();
 
-        Map m = (Map) value;
+
+        // Unless another dev poorly used #setValue this should never be a problem.
+        //noinspection unchecked
+        Map<Object, Object> m = (Map<Object, Object>) value;
         m.put(node.getKey(), node);
 
     }
@@ -149,9 +151,9 @@ public class ConfigNode {
     public BigInteger optBigInt(BigInteger def) { return value == null || !(value instanceof BigInteger) ? def : getBigInt(); }
     public void setBigInt(BigInteger b) { value = b; }
 
-    public List getList() { return (List) value; }
-    public List optList(List def) { return value == null || !(value instanceof List) ? def : getList(); }
-    public void setList(List l) { value = l; }
+    public List<Object> getList() { return (List) value; }
+    public List<Object> optList(List def) { return value == null || !(value instanceof List) ? def : getList(); }
+    public void setList(List<Object> l) { value = l; }
 
 
     //------------------------------------------------------------------------------------------------------------------
