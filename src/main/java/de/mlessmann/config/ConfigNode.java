@@ -128,32 +128,38 @@ public class ConfigNode {
     }
 
     public String getString() { return (String) value; }
-    public String optString(String def) { return value == null || !(value instanceof String) ? def : getString(); }
+    public String optString(String def) { return value != null && (value instanceof String) ? getString() : def; }
     public void setString(String s) { value = s; }
 
     public Integer getInt() { return (Integer) value; }
-    public Integer optInt(Integer def) { return value == null || !(value instanceof Integer) ? def : getInt(); }
+    public Integer optInt(Integer def) { return value != null && (value instanceof Integer) ? getInt() : def; }
     public void setInt(Integer i) { value = i; }
 
     public Long getLong() { return (Long) value; }
-    public Long optLong(Long def) { return value == null || !(value instanceof Long) ? def : getLong(); }
+    public Long optLong(Long def) { return value != null && (value instanceof Long) ? getLong() : def; }
     public void setLong(Long l) { value = l; }
 
     public Double getDouble() { return (Double) value; }
-    public Double optDouble(Double def) { return value == null || !(value instanceof Double) ? def : getDouble(); }
+    public Double optDouble(Double def) { return value != null && (value instanceof Double) ? getDouble() : def; }
     public void setDouble(Double d) { value = d; }
 
     public Boolean getBoolean() { return (Boolean) value; }
-    public Boolean optBoolean(Boolean def) { return value == null || !(value instanceof Boolean) ? def : getBoolean(); }
+    public Boolean optBoolean(Boolean def) { return value != null && (value instanceof Boolean) ? getBoolean() : def; }
     public void setBoolean(Boolean b) { value = b; }
 
     public BigInteger getBigInt() { return (BigInteger) value; }
-    public BigInteger optBigInt(BigInteger def) { return value == null || !(value instanceof BigInteger) ? def : getBigInt(); }
+    public BigInteger optBigInt(BigInteger def) { return value != null && (value instanceof BigInteger) ? getBigInt() : def; }
     public void setBigInt(BigInteger b) { value = b; }
 
-    public List<Object> getList() { return (List) value; }
-    public List<Object> optList(List def) { return value == null || !(value instanceof List) ? def : getList(); }
-    public void setList(List<Object> l) { value = l; }
+    public <T> List<T> getList() { return (List<T>) value; }
+    public <T> List<T> optList(List<T> def) {
+        try {
+            return value != null && (value instanceof List) ? getList() : def;
+        } catch (ClassCastException e) {
+            return def;
+        }
+    }
+    public void setList(List<?> l) { value = l; }
 
 
     //------------------------------------------------------------------------------------------------------------------
