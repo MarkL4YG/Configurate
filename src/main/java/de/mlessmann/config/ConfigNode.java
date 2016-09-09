@@ -3,10 +3,7 @@ package de.mlessmann.config;
 import de.mlessmann.config.except.RootMustStayHubException;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Life4YourGames on 18.07.16.
@@ -39,7 +36,7 @@ public class ConfigNode {
 
     }
 
-    private boolean isHub() { return value instanceof Map; }
+    public boolean isHub() { return value instanceof Map; }
 
     public Boolean isVirtual() { return value == null; }
 
@@ -57,21 +54,56 @@ public class ConfigNode {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    public void addNode(ConfigNode node) {
+    public boolean clean() {
+        if (!isHub()) {
+            return value == null;
+        } else {
 
+            if (value == null)
+                return true;
+            Map<?, ?> m = (Map<?, ?>) value;
+
+            if (m.isEmpty())
+                return true;
+
+            boolean toBeDeleted;
+
+            int i;
+            Object[] keys = m.keySet().toArray();
+            for (i = m.size()-1; i>=0; i--) {
+                toBeDeleted = false;
+                Object k = keys[i];
+                Object o = m.get(k);
+
+                if (o instanceof ConfigNode) {
+                    toBeDeleted = ((ConfigNode) o).clean();
+                } else {
+                    toBeDeleted = true;
+                }
+
+                if (toBeDeleted) {
+                    m.remove(k);
+                }
+            }
+            return m.isEmpty();
+        }
+    }
+
+    public void addNode(ConfigNode node) {
         if (!(value instanceof Map))
             value = new HashMap<String, ConfigNode>();
-
 
         // Unless another dev poorly used #setValue this should never be a problem.
         //noinspection unchecked
         Map<Object, Object> m = (Map<Object, Object>) value;
         m.put(node.getKey(), node);
+    }
 
+    public boolean hasNode(String node) {
+        return isHub() && ((Map) value).containsKey(node);
     }
 
     public ConfigNode getNode(String... keys) {
-
         if (keys.length < 1) return this;
 
         ConfigNode node = getOrCreateNode(keys[0]);
@@ -85,11 +117,9 @@ public class ConfigNode {
         } else {
             return node;
         }
-
     }
 
     private ConfigNode getOrCreateNode(String key) {
-
         if (isHub()) {
             Map m = (Map) value;
 
@@ -102,17 +132,29 @@ public class ConfigNode {
                 }
                 return (ConfigNode) m.get(key);
             }
-
         }
 
         ConfigNode n = new ConfigNode(this, key, null);
         addNode(n);
 
         return n;
-
     }
 
+    public Optional<List<String>> getKeys() {
 
+        List<String> r = null;
+
+        if (isHub()) {
+            Map<?, ?> m = (Map<?, ?>) value;
+            Set<?> s = m.keySet();
+            r = new ArrayList<String>();
+            final List<String> finalR = r;
+            s.stream().filter(e1 -> e1 instanceof String).forEach(e2 -> finalR.add((String) e2));
+        }
+
+        return Optional.ofNullable(r);
+
+    }
 
     //------------------------------------------------------------------------------------------------------------------
 

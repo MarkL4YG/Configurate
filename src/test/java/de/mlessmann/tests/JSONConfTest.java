@@ -10,7 +10,6 @@ import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,11 +74,14 @@ public class JSONConfTest {
     @Test
     public void test_4_Virtual() {
 
+        assertFalse(rootNode.hasNode("test"));
         assertTrue(rootNode.getNode("test").isVirtual());
 
         Boolean t = rootNode.getNode("test").optBoolean(true);
-
         assertTrue(t);
+
+        rootNode.clean();
+        assertFalse(rootNode.hasNode("test"));
 
     }
 

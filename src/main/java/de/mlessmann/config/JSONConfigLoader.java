@@ -60,8 +60,23 @@ public class JSONConfigLoader implements ConfigLoader {
 
         try {
 
-            JSONObject o = new JSONObject(c.toString());
+            String s = c.toString().trim();
+            JSONObject o;
 
+            if (s.startsWith("[") && s.endsWith("]")) {
+                JSONArray a = new JSONArray(s);
+                o = new JSONObject();
+
+                int i = 0;
+                for (Object j : a) {
+                    if (j instanceof JSONObject) {
+                        o.put("obj_" + i++, (JSONObject) j);
+                    }
+                }
+
+            } else {
+                o = new JSONObject(c.toString());
+            }
             return fromJSON(o, null);
 
         } catch (JSONException e) {
@@ -128,7 +143,11 @@ public class JSONConfigLoader implements ConfigLoader {
 
     public void saveTo(ConfigNode node, File file) {
 
-        JSONObject j = nodeToJSON(node, null);
+        JSONObject j;
+        if (!node.clean())
+            j = nodeToJSON(node, null);
+        else
+            j = new JSONObject();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
 
@@ -136,9 +155,7 @@ public class JSONConfigLoader implements ConfigLoader {
             writer.flush();
 
         } catch (IOException e) {
-
             error = e;
-
         }
 
     }
