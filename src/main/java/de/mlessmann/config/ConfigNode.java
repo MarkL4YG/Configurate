@@ -15,10 +15,8 @@ public class ConfigNode {
     private ConfigNode parent;
 
     public ConfigNode() {
-
         //New empty root node
         value = new HashMap<String, ConfigNode>();
-
     }
 
     public ConfigNode(ConfigNode parent, String key) {
@@ -96,7 +94,24 @@ public class ConfigNode {
         // Unless another dev poorly used #setValue this should never be a problem.
         //noinspection unchecked
         Map<Object, Object> m = (Map<Object, Object>) value;
+        node.setParent(this);
         m.put(node.getKey(), node);
+    }
+
+    protected void setParent(ConfigNode parent) {
+        if (parent!=null)
+            this.parent.unregisterNode(this);
+        this.parent = parent;
+    }
+
+    protected void unregisterNode(ConfigNode node) {
+        if (!isHub()) return;
+
+        // Unless another dev poorly used #setValue this should never be a problem.
+        //noinspection unchecked
+        Map<Object, Object> m = (Map<Object, Object>) value;
+        if (m.containsValue(node))
+            m.remove(node.getKey());
     }
 
     public boolean hasNode(String node) {
