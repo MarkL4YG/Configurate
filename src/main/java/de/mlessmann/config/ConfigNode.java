@@ -98,6 +98,12 @@ public class ConfigNode {
         m.put(node.getKey(), node);
     }
 
+    public void delNode(String name) {
+        if (hasNode(name)) {
+            getNode(name).setParent(null);
+        }
+    }
+
     protected void setParent(ConfigNode parent) {
         if (parent!=null)
             this.parent.unregisterNode(this);
