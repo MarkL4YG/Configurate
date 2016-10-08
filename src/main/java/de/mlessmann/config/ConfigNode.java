@@ -20,18 +20,14 @@ public class ConfigNode {
     }
 
     public ConfigNode(ConfigNode parent, String key) {
-
         this.parent = parent;
         this.key = key;
-
     }
 
     public ConfigNode(ConfigNode parent, String key, Object value) {
-
         this.parent = parent;
         this.key = key;
         this.value = value;
-
     }
 
     public boolean isHub() { return value instanceof Map; }
@@ -130,11 +126,9 @@ public class ConfigNode {
         ConfigNode node = getOrCreateNode(keys[0]);
 
         if (keys.length > 1) {
-
             String[] newKeys = Arrays.copyOfRange(keys, 1, keys.length);
 
             return node.getNode(newKeys);
-
         } else {
             return node;
         }
@@ -162,7 +156,6 @@ public class ConfigNode {
     }
 
     public Optional<List<String>> getKeys() {
-
         List<String> r = null;
 
         if (isHub()) {
@@ -174,7 +167,6 @@ public class ConfigNode {
         }
 
         return Optional.ofNullable(r);
-
     }
 
     //------------------------------------------------------------------------------------------------------------------
