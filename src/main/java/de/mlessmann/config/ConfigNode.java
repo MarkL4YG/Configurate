@@ -94,14 +94,22 @@ public class ConfigNode {
         m.put(node.getKey(), node);
     }
 
-    public void delNode(String name) {
+    /**
+     * Returns the deleted node
+     * @param name Name of the node to delete
+     * @return Nullable - Detached ConfigNode (aka. the node that has been deleted)
+     */
+    public ConfigNode delNode(String name) {
         if (hasNode(name)) {
-            getNode(name).setParent(null);
+            ConfigNode node = getNode(name);
+            node.setParent(null);
+            return node;
         }
+        return null;
     }
 
     protected void setParent(ConfigNode parent) {
-        if (parent!=null)
+        if (this.parent!=null)
             this.parent.unregisterNode(this);
         this.parent = parent;
     }
@@ -132,6 +140,10 @@ public class ConfigNode {
         } else {
             return node;
         }
+    }
+
+    public ConfigNode getNode(String path, char divider) {
+        return getNode(path.split("["+divider+"]"));
     }
 
     private ConfigNode getOrCreateNode(String key) {
@@ -170,6 +182,23 @@ public class ConfigNode {
     }
 
     //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * USE THIS WITH CAUTION! IT CAN BREAK YOUR WHOLE CONFIG!
+     * Rename the node to be a different one.
+     * This unregisters itself from its parent, changes the key and then adds itself again.
+     * @param key The new name of the node
+     * @throws RootMustStayHubException Cannot rename root hub node
+     * @deprecated just to make sure you know what you're doing
+     */
+    @Deprecated
+    public void setKey(String key) throws RootMustStayHubException {
+        if (parent == null) throw new RootMustStayHubException("Cannot set a key for a root node!");
+        ConfigNode savedParent = parent;
+        setParent(null);
+        this.key = key;
+        savedParent.addNode(this);
+    }
 
     public String getKey() { return key; }
 
