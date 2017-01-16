@@ -34,32 +34,25 @@ public class JSONConfigLoader implements ConfigLoader {
 
     @Override
     public ConfigNode loadFromFile(File file) {
-
         this.file = file;
-
         return load();
-
     }
 
     public ConfigNode load() {
+        //New root node when the config does not exist
+        if (!this.file.isFile()) return new ConfigNode();
 
         StringBuilder c = new StringBuilder();
-
         try (BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
-
             reader.lines()
                     .forEach(
                             l -> c.append(l.endsWith("\n") ? l : l + "\n" )
                     );
-
         } catch (IOException e) {
-
             error = e;
-
         }
 
         try {
-
             String s = c.toString().trim();
             JSONObject o;
 
