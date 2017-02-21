@@ -248,4 +248,32 @@ public class ConfigNode {
 
     //------------------------------------------------------------------------------------------------------------------
 
+    @Override
+    public ConfigNode clone() {
+        ConfigNode node = new ConfigNode(null, key);
+        try {
+            if (value instanceof Map<?, ?>) {
+                Map<?, ?> m = ((Map<?, ?>) value);
+                Exception[] es = new Exception[]{null};
+                m.forEach((k, v) -> {
+                    if (es[0]!=null)return;
+                    if (v instanceof ConfigNode) {
+                        node.addNode(((ConfigNode) v).clone());
+                    } else {
+                        try {
+                            node.getNode((String) k).setValue(v);
+                        } catch (Exception e) {
+                            es[0] = e;
+                        }
+                    }
+                });
+                if (es[0] != null) throw new RuntimeException("Failed to clone node! Encountered unexpected Exception!", es[0]);
+            } else {
+                node.setValue(value);
+            }
+        } catch (RootMustStayHubException e) {
+            throw new RuntimeException("Failed to clone node! Encountered unexpected RMSHException!", e);
+        }
+        return node;
+    }
 }

@@ -1,16 +1,128 @@
-group 'de.mlessmann'
-version '0.0.0.3'
+import org.apache.tools.ant.filters.ReplaceTokens
 
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+project.ext {
+    /*
+    This will automatically publish to mavenLocal after task 'build' when enabled
+     */
+    //wantAutoMavenLocalPush = "true" == System.getenv("configurate_pushMavenLocal")
+    wantAutoMavenLocalPush = true
+
+    vmajor = 0
+    vminor = 0
+    vbuild = 5
+    vadd = ""
+    id = "configurate"
+}
+
+group 'de.mlessmann'
+version  "${project.ext.vmajor}.${project.ext.vminor}.${project.ext.vbuild}${project.ext.vadd}"
+
 repositories {
+    mavenLocal()
+    maven {
+        url = "http://maven.fearnixx.de/maven2"
+    }
     mavenCentral()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile 'org.json:json:20160810'
+}
+
+//// === === === === === customize default tasks === === === === ////
+/*
+ * 1. Clean build/classes/
+ * 2. Copy .java classes to build/classes/java and run ReplaceTokens on them
+ * 3. Compile the classes as normal but from build/classes/java
+ * 4. Jar the binaries and the sources
+ * 5. Publish to mavenLocal - if wanted
+ * 6. Done!
+ */
+
+clean {
+    //Normal delete except it excludes anything in "libs"
+    delete = []
+    FileTree tree = fileTree(dir: 'build');
+    tree.exclude 'libs**'
+    tree.each { f ->
+        delete(f)
+    }
+    delete('build/rawClasses')
+}
+
+task prepareClasses(type: Copy, dependsOn: clean) {
+    project.version = "${project.ext.vmajor}.${project.ext.vminor}.${project.ext.vbuild}";
+    filter(ReplaceTokens,
+            tokens: [BOTVERSION: project.version.toString()])
+    from 'src/main/java'
+    into 'build/rawClasses'
+}
+
+compileJava {
+    dependsOn(tasks.prepareClasses)
+    classpath = sourceSets.main.compileClasspath
+    println(classpath.collect().join('\n'))
+    destinationDir = new File('build/classes/main')
+    source = fileTree('build/rawClasses')
+}
+
+jar {
+    from 'build/rawClasses'
+    archiveName "${project.ext.id}-${project.version}.jar"
+}
+
+task jarSources(type: Jar) {
+    from sourceSets.main.allSource
+    from sourceSets.main.output
+    classifier = 'src'
+    archiveName "${project.ext.id}-${project.version}-src.jar"
+}
+build.dependsOn jarSources
+
+publishing {
+    repositories {
+        mavenLocal()
+        maven {
+            url uri('build/maven2')
+        }
+    }
+    publications {
+        api(MavenPublication) {
+            groupId project.group
+            artifactId project.ext.id
+            version project.version
+
+            from components.java
+
+            artifacts = [jar]
+        }
+        sources(MavenPublication) {
+            groupId project.group
+            artifactId project.ext.id
+            version project.version
+
+            from components.java
+
+            artifacts = [jar, jarSources]
+        }
+    }
+}
+
+task triggerPublish(type: Task) {
+    println("wantAutoMavenLocal: " + project.ext.wantAutoMavenLocalPush)
+    if (project.ext.wantAutoMavenLocalPush == true) {
+        build.finalizedBy publishToMavenLocal
+    }
+}
+build << { tasks.triggerPublish }
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13'
 }

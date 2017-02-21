@@ -9,12 +9,13 @@ import java.io.File;
  */
 public interface ConfigLoader {
 
-    ConfigNode loadFromFile(String filePath);
-
+    ConfigNode load();
     ConfigNode loadFromFile(File file);
+    ConfigNode loadFromFile(String filePath);
 
     void save(ConfigNode node);
 
+    void setFile(File file);
     File getFile();
 
     boolean hasError();
@@ -22,5 +23,4 @@ public interface ConfigLoader {
     Exception getError();
 
     void resetError();
-
 }

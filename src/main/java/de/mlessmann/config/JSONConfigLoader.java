@@ -25,6 +25,8 @@ public class JSONConfigLoader implements ConfigLoader {
 
     public void resetError() { error = null; }
 
+    public void setFile(File file) { this.file = file; }
+
     public File getFile() { return file; }
 
     @Override
@@ -40,7 +42,7 @@ public class JSONConfigLoader implements ConfigLoader {
 
     public ConfigNode load() {
         //New root node when the config does not exist
-        if (!this.file.isFile()) return new ConfigNode();
+        if (this.file == null || !this.file.isFile()) return new ConfigNode();
 
         StringBuilder c = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
