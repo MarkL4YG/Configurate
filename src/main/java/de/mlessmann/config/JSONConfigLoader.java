@@ -132,7 +132,7 @@ public class JSONConfigLoader implements ConfigLoader {
 
         if (n.isHub()) {
             final JSONObject finalParent = parent;
-            n.getHub().get().forEach((k, node) -> finalParent.put(k, nodeToJSON(node, new JSONObject())));
+            n.getHub().get().forEach((k, node) -> nodeToJSON(node, finalParent));
         } else if (n.isType(List.class)) {
             if (n.getParent() == null) throw new RuntimeException("Cannot serialize root nodes that aren't hubs");
             parent.put(n.getKey().get(), listToJSON(n.getList()));

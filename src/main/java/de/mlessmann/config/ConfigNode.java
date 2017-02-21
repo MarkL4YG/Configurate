@@ -75,6 +75,8 @@ public class ConfigNode {
             hub = new HashMap<String, ConfigNode>();
             value = null;
         }
+        //Attach node
+        node.setParent(this);
         hub.put(key, node);
     }
 
