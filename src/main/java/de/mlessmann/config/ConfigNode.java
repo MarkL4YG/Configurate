@@ -1,7 +1,5 @@
 package de.mlessmann.config;
 
-import de.mlessmann.config.except.RootMustStayHubException;
-
 import java.math.BigInteger;
 import java.util.*;
 
@@ -10,31 +8,33 @@ import java.util.*;
  */
 public class ConfigNode {
 
-    private String key;
+    private Map<String, ConfigNode> hub;
     private Object value;
     private ConfigNode parent;
 
     public ConfigNode() {
         //New empty root node
-        value = new HashMap<String, ConfigNode>();
+        hub = new HashMap<String, ConfigNode>();
+        value = null;
     }
 
     public ConfigNode(ConfigNode parent, String key) {
+        this();
         this.parent = parent;
-        this.key = key;
+        parent.addNode(key, this);
     }
 
     public ConfigNode(ConfigNode parent, String key, Object value) {
-        this.parent = parent;
-        this.key = key;
+        this(parent, key);
         this.value = value;
+        this.hub = null;
     }
 
-    public boolean isHub() { return value instanceof Map; }
+    public boolean isHub() { return hub != null; }
 
-    public Boolean isVirtual() { return value == null; }
+    public Boolean isVirtual() { return hub == null && value == null; }
 
-    public Boolean isType(Class<?> cls) { return cls.isInstance(value); }
+    public Boolean isType(Class<?> cls) { return !isHub() && cls.isInstance(value); }
 
     public ConfigNode getParent() {
         return parent;
@@ -50,48 +50,32 @@ public class ConfigNode {
 
     public boolean clean() {
         if (!isHub()) {
-            return value == null;
+            return isVirtual();
         } else {
-
-            if (value == null)
-                return true;
-            Map<?, ?> m = (Map<?, ?>) value;
-
-            if (m.isEmpty())
+            if (hub.isEmpty())
                 return true;
 
             boolean toBeDeleted;
 
             int i;
-            Object[] keys = m.keySet().toArray();
-            for (i = m.size()-1; i>=0; i--) {
-                toBeDeleted = false;
-                Object k = keys[i];
-                Object o = m.get(k);
-
-                if (o instanceof ConfigNode) {
-                    toBeDeleted = ((ConfigNode) o).clean();
-                } else {
-                    toBeDeleted = true;
-                }
-
-                if (toBeDeleted) {
-                    m.remove(k);
+            String[] keys = hub.keySet().toArray(new String[hub.keySet().size()]);
+            for (i = hub.size()-1; i>=0; i--) {
+                String k = keys[i];
+                ConfigNode node = hub.get(k);
+                if (node.clean()) {
+                    hub.remove(k);
                 }
             }
-            return m.isEmpty();
+            return hub.isEmpty();
         }
     }
 
-    public void addNode(ConfigNode node) {
-        if (!(value instanceof Map))
-            value = new HashMap<String, ConfigNode>();
-
-        // Unless another dev poorly used #setValue this should never be a problem.
-        //noinspection unchecked
-        Map<Object, Object> m = (Map<Object, Object>) value;
-        node.setParent(this);
-        m.put(node.getKey(), node);
+    public void addNode(String key, ConfigNode node) {
+        if (hub == null) {
+            hub = new HashMap<String, ConfigNode>();
+            value = null;
+        }
+        hub.put(key, node);
     }
 
     /**
@@ -102,6 +86,7 @@ public class ConfigNode {
     public ConfigNode delNode(String name) {
         if (hasNode(name)) {
             ConfigNode node = getNode(name);
+            //Detach node so GC can collect it
             node.setParent(null);
             return node;
         }
@@ -116,16 +101,12 @@ public class ConfigNode {
 
     protected void unregisterNode(ConfigNode node) {
         if (!isHub()) return;
-
-        // Unless another dev poorly used #setValue this should never be a problem.
-        //noinspection unchecked
-        Map<Object, Object> m = (Map<Object, Object>) value;
-        if (m.containsValue(node))
-            m.remove(node.getKey());
+        if (hub.containsValue(node))
+            hub.remove(node.getKey().get());
     }
 
-    public boolean hasNode(String node) {
-        return isHub() && ((Map) value).containsKey(node);
+    public boolean hasNode(String key) {
+        return isHub() && hub.containsKey(key);
     }
 
     public ConfigNode getNode(String... keys) {
@@ -147,35 +128,26 @@ public class ConfigNode {
     }
 
     private ConfigNode getOrCreateNode(String key) {
-        if (isHub()) {
-            Map m = (Map) value;
-
-            if (m.containsKey(key)) {
-                if (m.get(key) instanceof ConfigNode) {
-                    //Do nothing
-                } else {
-                    m.remove(key);
-                    addNode(new ConfigNode(this, key, null));
-                }
-                return (ConfigNode) m.get(key);
-            }
+        if (!isHub()) {
+            hub = new HashMap<String, ConfigNode>();
+            value = null;
         }
-
-        ConfigNode n = new ConfigNode(this, key, null);
-        addNode(n);
-
-        return n;
+        if (!hub.containsKey(key)) {
+            //Node will attach itself
+            new ConfigNode(this, key, null);
+            return getOrCreateNode(key);
+        } else {
+            return hub.get(key);
+        }
     }
 
     public Optional<List<String>> getKeys() {
         List<String> r = null;
 
         if (isHub()) {
-            Map<?, ?> m = (Map<?, ?>) value;
-            Set<?> s = m.keySet();
+            Set<String> s = hub.keySet();
             r = new ArrayList<String>();
-            final List<String> finalR = r;
-            s.stream().filter(e1 -> e1 instanceof String).forEach(e2 -> finalR.add((String) e2));
+            r.addAll(s);
         }
 
         return Optional.ofNullable(r);
@@ -183,57 +155,57 @@ public class ConfigNode {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    /**
-     * USE THIS WITH CAUTION! IT CAN BREAK YOUR WHOLE CONFIG!
-     * Rename the node to be a different one.
-     * This unregisters itself from its parent, changes the key and then adds itself again.
-     * @param key The new name of the node
-     * @throws RootMustStayHubException Cannot rename root hub node
-     * @deprecated just to make sure you know what you're doing
-     */
-    @Deprecated
-    public void setKey(String key) throws RootMustStayHubException {
-        if (parent == null) throw new RootMustStayHubException("Cannot set a key for a root node!");
-        ConfigNode savedParent = parent;
-        setParent(null);
-        this.key = key;
-        savedParent.addNode(this);
+
+    public Optional<String> getKey(ConfigNode node) {
+        if (isHub()) {
+            Set<String> keys = hub.keySet();
+            for (String key : keys) {
+                if (hub.get(key) == node) return Optional.of(key);
+            }
+        }
+        return Optional.empty();
     }
 
-    public String getKey() { return key; }
+    public Optional<String> getKey() {
+        if (parent!=null) {
+            return parent.getKey(this);
+        }
+        return Optional.empty();
+    }
 
-    public Object getValue() { return value; }
+    public Optional<Object> getValue() { return Optional.ofNullable(value); }
+    public Optional<Map<String, ConfigNode>> getHub() { return Optional.ofNullable(hub); }
 
-    public void setValue(Object value) throws RootMustStayHubException {
-        if (key == null)
-            throw new RootMustStayHubException();
-        else
-            this.value = value;
+    public void setValue(Object value) {
+        if (hub != null)
+            hub.forEach((k, v) -> v.setParent(null));
+        hub = null;
+        this.value = value;
     }
 
     public String getString() { return (String) value; }
     public String optString(String def) { return value != null && (value instanceof String) ? getString() : def; }
-    public void setString(String s) { value = s; }
+    public void setString(String s) { setValue(s); }
 
     public Integer getInt() { return (Integer) value; }
     public Integer optInt(Integer def) { return value != null && (value instanceof Integer) ? getInt() : def; }
-    public void setInt(Integer i) { value = i; }
+    public void setInt(Integer i) { setValue(i);}
 
     public Long getLong() { return (Long) value; }
     public Long optLong(Long def) { return value != null && (value instanceof Long) ? getLong() : def; }
-    public void setLong(Long l) { value = l; }
+    public void setLong(Long l) { setValue(l); }
 
     public Double getDouble() { return (Double) value; }
     public Double optDouble(Double def) { return value != null && (value instanceof Double) ? getDouble() : def; }
-    public void setDouble(Double d) { value = d; }
+    public void setDouble(Double d) { setValue(d); }
 
     public Boolean getBoolean() { return (Boolean) value; }
     public Boolean optBoolean(Boolean def) { return value != null && (value instanceof Boolean) ? getBoolean() : def; }
-    public void setBoolean(Boolean b) { value = b; }
+    public void setBoolean(Boolean b) { setValue(b); }
 
     public BigInteger getBigInt() { return (BigInteger) value; }
     public BigInteger optBigInt(BigInteger def) { return value != null && (value instanceof BigInteger) ? getBigInt() : def; }
-    public void setBigInt(BigInteger b) { value = b; }
+    public void setBigInt(BigInteger b) { setValue(b); }
 
     public <T> List<T> getList() { return (List<T>) value; }
     public <T> List<T> optList(List<T> def) {
@@ -243,36 +215,25 @@ public class ConfigNode {
             return def;
         }
     }
-    public void setList(List<?> l) { value = l; }
+    public void setList(List<?> l) { setValue(l); }
 
 
     //------------------------------------------------------------------------------------------------------------------
 
     @Override
     public ConfigNode clone() {
-        ConfigNode node = new ConfigNode(null, key);
-        try {
-            if (value instanceof Map<?, ?>) {
-                Map<?, ?> m = ((Map<?, ?>) value);
-                Exception[] es = new Exception[]{null};
-                m.forEach((k, v) -> {
-                    if (es[0]!=null)return;
-                    if (v instanceof ConfigNode) {
-                        node.addNode(((ConfigNode) v).clone());
-                    } else {
-                        try {
-                            node.getNode((String) k).setValue(v);
-                        } catch (Exception e) {
-                            es[0] = e;
-                        }
-                    }
-                });
-                if (es[0] != null) throw new RuntimeException("Failed to clone node! Encountered unexpected Exception!", es[0]);
-            } else {
-                node.setValue(value);
-            }
-        } catch (RootMustStayHubException e) {
-            throw new RuntimeException("Failed to clone node! Encountered unexpected RMSHException!", e);
+        ConfigNode node = new ConfigNode();
+
+        if (isHub()) {
+            Exception[] es = new Exception[]{null};
+            hub.forEach((k, v) -> {
+                if (es[0] != null) return;
+                node.addNode(k, v.clone());
+            });
+            if (es[0] != null)
+                throw new RuntimeException("Failed to clone node! Encountered unexpected Exception!", es[0]);
+        } else {
+            node.setValue(value);
         }
         return node;
     }

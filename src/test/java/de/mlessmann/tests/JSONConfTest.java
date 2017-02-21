@@ -41,14 +41,11 @@ public class JSONConfTest {
         loader = new JSONConfigLoader();
 
         rootNode = loader.loadFromFile(file);
-
     }
 
     @Test
     public void test_1_Name() {
-
         assertEquals("hi", rootNode.getNode("name").getString());
-
     }
 
     @Test
@@ -60,7 +57,6 @@ public class JSONConfTest {
         assertArrayEquals(new String[]{"hi", "h2", "h3"}, l.toArray());
 
         assertEquals((Integer) 256, testNode.getNode("int").getInt());
-
     }
 
     @Test
@@ -68,7 +64,6 @@ public class JSONConfTest {
 
         assertEquals(Boolean.TRUE, rootNode.getNode("bool").getBoolean());
         assertEquals(Double.valueOf(230394.4329), rootNode.getNode("double").getDouble());
-
     }
 
     @Test
@@ -82,7 +77,6 @@ public class JSONConfTest {
 
         rootNode.clean();
         assertFalse(rootNode.hasNode("test"));
-
     }
 
     @Test
@@ -103,7 +97,6 @@ public class JSONConfTest {
 
         Logger.getGlobal().log(Level.INFO, "2_Orig MD5: " + MD5.digestToString(originMD5_2));
         Logger.getGlobal().log(Level.INFO, "2_Outp MD5: " + MD5.digestToString(resMD5));
-
     }
 
     @Test

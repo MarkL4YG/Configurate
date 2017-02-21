@@ -14,36 +14,22 @@ import java.security.NoSuchAlgorithmException;
 public class MD5 {
 
     public static byte[] md5File(String file) throws IOException {
-
         try {
-
             MessageDigest md = MessageDigest.getInstance("MD5");
             try (InputStream is = new FileInputStream(new File(file));
                  DigestInputStream dis = new DigestInputStream(is, md)) {
-
                 byte[] _b = new byte[1024];
-                int bytes = 0;
-
-                while ((bytes = dis.read(_b)) != -1) {
-
+                while (dis.read(_b) != -1) {
                 }
-
             }
-
-
-            byte[] digest = md.digest();
-
-            return digest;
-
+            return md.digest();
         } catch (NoSuchAlgorithmException e) {
             //Masquerade to IOE due to laziness ;)
             throw new IOException("Unable to generate MD5 -> MD5 algorithm unknown!");
         }
-
     }
 
     public static String digestToString(byte[] _b) {
-
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < _b.length; i++) {
 
@@ -52,12 +38,8 @@ public class MD5 {
             } else {
                 b.append(Integer.toHexString(0xff & _b[i]));
             }
-
         }
-
         return b.toString();
-
     }
-
 }
 

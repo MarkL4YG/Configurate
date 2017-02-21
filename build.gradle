@@ -13,9 +13,9 @@ project.ext {
     //wantAutoMavenLocalPush = "true" == System.getenv("configurate_pushMavenLocal")
     wantAutoMavenLocalPush = true
 
-    vmajor = 0
+    vmajor = 1
     vminor = 0
-    vbuild = 5
+    vbuild = 0
     vadd = ""
     id = "configurate"
 }
@@ -46,19 +46,24 @@ dependencies {
  * 6. Done!
  */
 
+task cleanRawClasses(type: Delete) {
+    FileTree tree = fileTree(dir: 'build/rawClasses')
+    delete(tree.files)
+}
+
 clean {
+    dependsOn(tasks.cleanRawClasses)
     //Normal delete except it excludes anything in "libs"
     delete = []
-    FileTree tree = fileTree(dir: 'build');
+    FileTree tree = fileTree(dir: 'build')
     tree.exclude 'libs**'
     tree.each { f ->
         delete(f)
     }
-    delete('build/rawClasses')
 }
 
 task prepareClasses(type: Copy, dependsOn: clean) {
-    project.version = "${project.ext.vmajor}.${project.ext.vminor}.${project.ext.vbuild}";
+    project.version = "${project.ext.vmajor}.${project.ext.vminor}.${project.ext.vbuild}"
     filter(ReplaceTokens,
             tokens: [BOTVERSION: project.version.toString()])
     from 'src/main/java'

@@ -1,7 +1,6 @@
 package de.mlessmann.config;
 
 import de.mlessmann.config.api.ConfigLoader;
-import de.mlessmann.config.except.RootMustStayHubException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,7 +8,6 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Life4YourGames on 21.08.16.
@@ -53,7 +51,6 @@ public class JSONConfigLoader implements ConfigLoader {
         } catch (IOException e) {
             error = e;
         }
-
         try {
             String s = c.toString().trim();
             JSONObject o;
@@ -65,7 +62,7 @@ public class JSONConfigLoader implements ConfigLoader {
                 int i = 0;
                 for (Object j : a) {
                     if (j instanceof JSONObject) {
-                        o.put("obj_" + i++, (JSONObject) j);
+                        o.put("obj_" + i++, j);
                     }
                 }
 
@@ -75,17 +72,12 @@ public class JSONConfigLoader implements ConfigLoader {
             return fromJSON(o, null);
 
         } catch (JSONException e) {
-
             error = e;
-
         }
-
         return new ConfigNode();
-
     }
 
     public ConfigNode fromJSON(JSONObject o, ConfigNode parent) {
-
         ConfigNode node = parent;
         if (parent == null)
             node = new ConfigNode();
@@ -93,12 +85,8 @@ public class JSONConfigLoader implements ConfigLoader {
         for (String k : o.keySet()) {
 
             Object v = o.get(k);
-
             if (v instanceof JSONObject) {
-
                 ConfigNode confNode = fromJSON((JSONObject) v, new ConfigNode(node, k));
-                node.addNode(confNode);
-
             } else if (v instanceof JSONArray) {
 
                 JSONArray arr = (JSONArray) v;
@@ -110,116 +98,57 @@ public class JSONConfigLoader implements ConfigLoader {
                 }
 
                 confNode.setList(l);
-                node.addNode(confNode);
-
             } else {
 
                 ConfigNode confNode = new ConfigNode(node, k);
-                try {
-                    confNode.setValue(v);
-                } catch (RootMustStayHubException e) {
-                    error = e;
-                }
-                node.addNode(confNode);
-
+                confNode.setValue(v);
             }
-
         }
-
         return node;
-
     }
 
     public void save(ConfigNode node) {
-
         saveTo(node, file);
-
     }
 
     public void saveTo(ConfigNode node, File file) {
-
         JSONObject j;
         if (!node.clean())
             j = nodeToJSON(node, null);
         else
             j = new JSONObject();
-
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-
             writer.write(j.toString(4));
             writer.flush();
-
         } catch (IOException e) {
             error = e;
         }
-
     }
 
     private JSONObject nodeToJSON(ConfigNode n, JSONObject parent) {
 
-        JSONObject res = parent;
         if (parent == null)
-            res = new JSONObject();
+            parent = new JSONObject();
 
-        String k = n.getKey();
-        Object o = n.getValue();
-
-        if (o instanceof Map) {
-
-            Map map = (Map) o;
-
-            for (Object key : map.keySet()) {
-
-                if (!(key instanceof String))
-                    continue;
-
-                Object val = map.get(key);
-                if (!(val instanceof ConfigNode))
-                    continue;
-
-                ConfigNode newNode = (ConfigNode) val;
-
-                if (newNode.getValue() instanceof ConfigNode) {
-
-                    JSONObject nodeJSON = nodeToJSON(newNode, new JSONObject());
-                    res.put((String) key, nodeJSON);
-
-                } else if (newNode.getValue() instanceof List) {
-
-                    List list = (List) newNode.getValue();
-
-                    res.put((String) key, valuesToJSON(list));
-
-                } else if (newNode.getValue() instanceof Map) {
-
-                    JSONObject object = nodeToJSON(newNode, new JSONObject());
-                    //JSONObject object = fromMappedNode(newNode);
-                    res.put((String) key, object);
-
-                } else {
-
-                    res.put((String) key, newNode.getValue());
-
-                }
-
-            }
-
+        if (n.isHub()) {
+            final JSONObject finalParent = parent;
+            n.getHub().get().forEach((k, node) -> finalParent.put(k, nodeToJSON(node, new JSONObject())));
+        } else if (n.isType(List.class)) {
+            if (n.getParent() == null) throw new RuntimeException("Cannot serialize root nodes that aren't hubs");
+            parent.put(n.getKey().get(), listToJSON(n.getList()));
+        } else {
+            if (n.getParent() == null) throw new RuntimeException("Cannot serialize root nodes that aren't hubs");
+            parent.put(n.getKey().get(), n.getValue().get());
         }
-
-        return res;
-
+        return parent;
     }
 
-    private JSONArray valuesToJSON(List l) {
-
+    private JSONArray listToJSON(List l) {
         JSONArray arr = new JSONArray();
-
         for (Object o : l) {
             arr.put(o);
         }
-
         return arr;
-
     }
 
 
