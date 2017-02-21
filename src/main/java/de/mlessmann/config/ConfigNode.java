@@ -179,9 +179,12 @@ public class ConfigNode {
     public Optional<Map<String, ConfigNode>> getHub() { return Optional.ofNullable(hub); }
 
     public void setValue(Object value) {
-        if (hub != null)
-            hub.forEach((k, v) -> v.setParent(null));
-        hub = null;
+        if (hub != null) {
+            //Prevent CME when changing from hub to endNode
+            Map<String, ConfigNode> oHub = hub;
+            hub = null;
+            oHub.forEach((k, v) -> v.setParent(null));
+        }
         this.value = value;
     }
 
