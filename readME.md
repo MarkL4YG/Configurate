@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/MarkL4YG/Configurate.svg?branch=bleeding)](https://travis-ci.org/MarkL4YG/Configurate)
+[![Build Status](https://travis-ci.org/MarkL4YG/configurate.svg?branch=bleeding)](https://travis-ci.org/MarkL4YG/Configurate)
 
 # MarkL4YG/Configurate
 
