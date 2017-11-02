@@ -30,11 +30,11 @@ public class ConfigNode {
         this.hub = null;
     }
 
-    public boolean isHub() { return hub != null; }
+    public boolean hasMapChildren() { return hub != null; }
 
     public Boolean isVirtual() { return hub == null && value == null; }
 
-    public Boolean isType(Class<?> cls) { return !isHub() && cls.isInstance(value); }
+    public Boolean isType(Class<?> cls) { return value != null && !hasMapChildren() && cls.isInstance(value); }
 
     public ConfigNode getParent() {
         return parent;
@@ -49,7 +49,7 @@ public class ConfigNode {
     //------------------------------------------------------------------------------------------------------------------
 
     public boolean clean() {
-        if (!isHub()) {
+        if (!hasMapChildren()) {
             return isVirtual();
         } else {
             if (hub.isEmpty())
@@ -102,13 +102,13 @@ public class ConfigNode {
     }
 
     protected void unregisterNode(ConfigNode node) {
-        if (!isHub()) return;
+        if (!hasMapChildren()) return;
         if (hub.containsValue(node))
             hub.remove(node.getKey().get());
     }
 
     public boolean hasNode(String key) {
-        return isHub() && hub.containsKey(key);
+        return hasMapChildren() && hub.containsKey(key);
     }
 
     public ConfigNode getNode(String... keys) {
@@ -130,7 +130,7 @@ public class ConfigNode {
     }
 
     private ConfigNode getOrCreateNode(String key) {
-        if (!isHub()) {
+        if (!hasMapChildren()) {
             hub = new HashMap<String, ConfigNode>();
             value = null;
         }
@@ -146,7 +146,7 @@ public class ConfigNode {
     public Optional<List<String>> getKeys() {
         List<String> r = null;
 
-        if (isHub()) {
+        if (hasMapChildren()) {
             Set<String> s = hub.keySet();
             r = new ArrayList<String>();
             r.addAll(s);
@@ -159,7 +159,7 @@ public class ConfigNode {
 
 
     public Optional<String> getKey(ConfigNode node) {
-        if (isHub()) {
+        if (hasMapChildren()) {
             Set<String> keys = hub.keySet();
             for (String key : keys) {
                 if (hub.get(key) == node) return Optional.of(key);
@@ -229,7 +229,7 @@ public class ConfigNode {
     public ConfigNode clone() {
         ConfigNode node = new ConfigNode();
 
-        if (isHub()) {
+        if (hasMapChildren()) {
             Exception[] es = new Exception[]{null};
             hub.forEach((k, v) -> {
                 if (es[0] != null) return;

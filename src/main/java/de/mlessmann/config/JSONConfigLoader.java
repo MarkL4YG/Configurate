@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,12 +17,23 @@ public class JSONConfigLoader implements ConfigLoader {
 
     private Exception error;
     private File file;
+    private Charset encoding = Charset.defaultCharset();
 
     public boolean hasError() { return error != null; }
 
     public Exception getError() { return error; }
 
     public void resetError() { error = null; }
+
+    @Override
+    public Charset getEncoding() {
+        return encoding;
+    }
+
+    @Override
+    public void setEncoding(Charset encoding) {
+        this.encoding = encoding;
+    }
 
     public void setFile(File file) { this.file = file; }
 
@@ -43,7 +55,7 @@ public class JSONConfigLoader implements ConfigLoader {
         if (this.file == null || !this.file.isFile()) return new ConfigNode();
 
         StringBuilder c = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(this.file), encoding))) {
             reader.lines()
                     .forEach(
                             l -> c.append(l.endsWith("\n") ? l : l + "\n" )
@@ -117,7 +129,7 @@ public class JSONConfigLoader implements ConfigLoader {
             j = nodeToJSON(node, null);
         else
             j = new JSONObject();
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding))) {
             writer.write(j.toString(4));
             writer.flush();
         } catch (IOException e) {
@@ -130,10 +142,10 @@ public class JSONConfigLoader implements ConfigLoader {
         if (parent == null)
             parent = new JSONObject();
 
-        if (n.isHub()) {
+        if (n.hasMapChildren()) {
             final JSONObject finalParent = parent;
             n.getHub().get().forEach((k, node) -> {
-                if (!node.isHub()) nodeToJSON(node, finalParent);
+                if (!node.hasMapChildren()) nodeToJSON(node, finalParent);
                 else finalParent.put(k, nodeToJSON(node, new JSONObject()));
             });
         } else if (n.isType(List.class)) {
