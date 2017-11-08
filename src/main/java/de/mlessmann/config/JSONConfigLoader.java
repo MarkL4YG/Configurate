@@ -51,8 +51,10 @@ public class JSONConfigLoader implements ConfigLoader {
     }
 
     public ConfigNode load() {
+        if (this.file == null)
+            throw new NullPointerException("Configuration file must not be null!");
         //New root node when the config does not exist
-        if (this.file == null || !this.file.isFile()) return new ConfigNode();
+        if (!this.file.isFile()) return new ConfigNode();
 
         StringBuilder c = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(this.file), encoding))) {
@@ -124,6 +126,8 @@ public class JSONConfigLoader implements ConfigLoader {
     }
 
     public void saveTo(ConfigNode node, File file) {
+        if (file == null)
+            throw new NullPointerException("Configuration file must not be null!");
         JSONObject j;
         if (!node.clean())
             j = nodeToJSON(node, null);
