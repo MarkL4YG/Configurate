@@ -15,7 +15,7 @@ project.ext {
 
     vmajor = 1
     vminor = 0
-    vbuild = 3
+    vbuild = 4
     vadd = ""
     id = "configurate"
 }

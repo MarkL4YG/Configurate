@@ -36,6 +36,16 @@ public class ConfigNode {
 
     public Boolean isType(Class<?> cls) { return value != null && !hasMapChildren() && cls.isInstance(value); }
 
+    public Boolean defaultValue(Object o) {
+        if (o != null) {
+            if (!isType(o.getClass())) {
+                setValue(o);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public ConfigNode getParent() {
         return parent;
     }
@@ -54,8 +64,6 @@ public class ConfigNode {
         } else {
             if (hub.isEmpty())
                 return true;
-
-            boolean toBeDeleted;
 
             int i;
             String[] keys = hub.keySet().toArray(new String[hub.keySet().size()]);
