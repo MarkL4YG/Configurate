@@ -35,15 +35,13 @@ public class ConfigNode {
     public Boolean isVirtual() { return hub == null && value == null; }
 
     public Boolean isType(Class<?> cls) {
-        if (List.class.isAssignableFrom(cls)) {
-            return value != null && value instanceof List;
-        }
         return value != null && !hasMapChildren() && cls.isInstance(value);
     }
 
     public Boolean defaultValue(Object o) {
         if (o != null) {
-            if (!isType(o.getClass())) {
+            if (!isType(o.getClass())
+                && (!(o instanceof List) && isType(List.class))) {
                 setValue(o);
                 return true;
             }
