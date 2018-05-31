@@ -39,14 +39,15 @@ public class ConfigNode {
     }
 
     public Boolean defaultValue(Object o) {
-        if (o != null) {
-            if (!isType(o.getClass())
-                && (!(o instanceof List) && isType(List.class))) {
-                setValue(o);
-                return true;
-            }
+        if (o == null || (isType(o.getClass()) && !isType(List.class))) {
+            return false;
         }
-        return false;
+        if (isType(List.class)) {
+            if (List.class.isAssignableFrom(o.getClass()))
+                return false;
+        }
+        setValue(o);
+        return true;
     }
 
     public ConfigNode getParent() {
